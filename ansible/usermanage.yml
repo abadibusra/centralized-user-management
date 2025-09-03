@@ -1,0 +1,61 @@
+- name: Deploy LDAP Web App to node1
+  hosts: node1
+  become: yes
+
+  tasks:
+    - name: Remove Podman and Buildah (conflict with Docker)
+      yum:
+        name:
+          - podman
+          - buildah
+          - runc
+        state: absent
+    - name: Ensure required packages are installed
+      yum:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+
+    - name: Add Docker CE repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install Docker CE
+      yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Install pip3 (for docker-compose module)
+      yum:
+        name: python3-pip
+        state: present
+
+    - name: Install docker-compose via pip
+      pip:
+        name: docker-compose
+
+    - name: Copy app files to node1
+      copy:
+        src: files/
+        dest: /opt/ldap-webapp/
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Build and run containers with Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /opt/ldap-webapp/
+        state: present
+

@@ -1,0 +1,36 @@
+---
+- name: Install and configure OpenLDAP on Debian
+  hosts: ldap-server
+  become: yes
+
+  vars_files:
+    - vars/ldap_main.yml
+    - vars/ldap_debconf.yml
+
+  tasks:
+
+    - name: Install slapd and ldap-utils
+      apt:
+        name:
+          - slapd
+          - ldap-utils
+        state: present
+        update_cache: yes
+
+    - name: Preseed slapd debconf answers
+      debconf:
+        name: slapd
+        question: "{{ item.question }}"
+        value: "{{ item.value }}"
+        vtype: "{{ item.vtype }}"
+      loop: "{{ ldap_debconf }}"
+
+    - name: Reconfigure slapd silently
+      command: dpkg-reconfigure -f noninteractive slapd
+
+    - name: Ensure slapd is running
+      systemd:
+        name: slapd
+        state: started
+        enabled: true
+

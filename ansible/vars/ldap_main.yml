@@ -1,0 +1,5 @@
+ldap_domain: "example.com"
+ldap_org: "Example Inc"
+ldap_admin_password: "changeme"   # 🔒 put this in ansible-vault for real usage
+ldap_base_dn: "dc=example,dc=com"
+
